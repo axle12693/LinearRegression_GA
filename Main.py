@@ -3,13 +3,17 @@ import numpy as np
 import math
 import random
 
+NUMBER_COMPONENTS = 2
+
 
 def get_error(individual, points):
-    m = individual[1][0]
-    b = individual[1][1]
+    components = individual[1]
     error = 0
     for index, x_el in enumerate(points[0]):
-        y = x_el * m + b
+        # y = x_el * m + b
+        y = 0
+        for comp_index, comp in enumerate(components):
+            y += comp * (x_el ** (len(components) - 1 - comp_index))
         error += (y - points[1][index]) ** 2
     error = math.sqrt(error)
     individual[0] = error
@@ -29,9 +33,9 @@ def get_average_error(individuals):
 
 
 def main():
-    individuals = [[-1, [random.uniform(-10.0, 10.0), random.uniform(-10.0, 10.0)]] for i in range(10)]
+    individuals = [[-1, [random.uniform(-10.0, 10.0) for _ in range(NUMBER_COMPONENTS)]] for _ in range(1000)]
 
-    points = np.array([[5,26,42,9], [32,5,16,11]])
+    points = np.array([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [3, 7, 13, 21, 31, 43, 57, 73, 91, 111]])
 
     x = np.arange(min(points[0]) - 1, max(points[0]) + 1, 0.2)
 
@@ -47,15 +51,16 @@ def main():
     for ind in to_remove:
         individuals.remove(ind)
     to_break = False
-    for _ in range(1000):
+    while avg_error > 0.1 * len(points[0]):  # for _ in range(1000): # Modify for specific situations
         if to_break:
             break
         print("Starting a round with " + str(len(individuals)) + " individuals")
+        print("Avg error: " + str(avg_error))
+        print("'Best' error: " + str(individuals[0][0]))
         # Fill up individuals list with MUTANTS!!!!
         list_to_append = []
         ind_count = 0
         for ind in individuals:
-            #print("Individuals processed: " + str(ind_count))
             ind_count += 1
             # deep copy the individual
             new_ind = []
@@ -65,47 +70,27 @@ def main():
                 new_ind[1].append(el)
 
             # mutate the new individual!
-            if random.uniform(0, 1) < 0.5:
+            for comp_index, comp in enumerate(new_ind[1]):
                 if random.uniform(0, 1) < 0.5:
-                    new_ind[1][0] += 0.01
-                else:
-                    new_ind[1][0] -= 0.01
-            if random.uniform(0, 1) < 0.25:
-                if random.uniform(0, 1) < 0.5:
-                    new_ind[1][0] += 0.1
-                else:
-                    new_ind[1][0] -= 0.1
-            if random.uniform(0, 1) < 0.125:
-                if random.uniform(0, 1) < 0.5:
-                    new_ind[1][0] += 1.0
-                else:
-                    new_ind[1][0] -= 1.0
-            if random.uniform(0, 1) < 0.0625:
-                if random.uniform(0, 1) < 0.5:
-                    new_ind[1][0] += 10.0
-                else:
-                    new_ind[1][0] -= 10.0
-
-            if random.uniform(0, 1) < 0.5:
-                if random.uniform(0, 1) < 0.5:
-                    new_ind[1][1] += 0.01
-                else:
-                    new_ind[1][1] -= 0.01
-            if random.uniform(0, 1) < 0.25:
-                if random.uniform(0, 1) < 0.5:
-                    new_ind[1][1] += 0.1
-                else:
-                    new_ind[1][1] -= 0.1
-            if random.uniform(0, 1) < 0.125:
-                if random.uniform(0, 1) < 0.5:
-                    new_ind[1][1] += 1.0
-                else:
-                    new_ind[1][1] -= 1.0
-            if random.uniform(0, 1) < 0.0625:
-                if random.uniform(0, 1) < 0.5:
-                    new_ind[1][1] += 10.0
-                else:
-                    new_ind[1][1] -= 10.0
+                    if random.uniform(0, 1) < 0.5:
+                        new_ind[1][comp_index] += 0.01
+                    else:
+                        new_ind[1][comp_index] -= 0.01
+                if random.uniform(0, 1) < 0.25:
+                    if random.uniform(0, 1) < 0.5:
+                        new_ind[1][comp_index] += 0.1
+                    else:
+                        new_ind[1][comp_index] -= 0.1
+                if random.uniform(0, 1) < 0.125:
+                    if random.uniform(0, 1) < 0.5:
+                        new_ind[1][comp_index] += 0.2
+                    else:
+                        new_ind[1][comp_index] -= 0.2
+                if random.uniform(0, 1) < 0.0625:
+                    if random.uniform(0, 1) < 0.5:
+                        new_ind[1][comp_index] += 0.3
+                    else:
+                        new_ind[1][comp_index] -= 0.3
             list_to_append.append(new_ind)
         print("Finished creating mutants")
         for ind in list_to_append:
@@ -114,8 +99,8 @@ def main():
 
         # Remove all individuals whose error is greater than average
         get_errors(individuals, points)
-        last_avg = avg_error
-        while len(individuals) > 100:
+        last_avg = 0
+        while len(individuals) > 1000:
             last_avg = avg_error
             get_errors(individuals, points)
             avg_error = get_average_error(individuals)
@@ -134,12 +119,17 @@ def main():
         if to_break:
             break
 
-    print(get_average_error(individuals))
+    print("Average error: " + str(get_average_error(individuals)))
     ind = individuals[0][1]
-    y = ind[0] * x + ind[1]
+    print("Error of best: " + str(individuals[0][0]))
+    print(ind)
+    y = x - x
+    for comp_index, comp in enumerate(ind):
+        y += comp * (x ** (len(ind) - 1 - comp_index))
     fig, ax = plt.subplots()
     ax.plot(x, y)
     ax.plot(points[0], points[1], 'ro')
     plt.show()
+
 
 main()
